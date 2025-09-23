@@ -108,6 +108,7 @@ export default function Game() {
             title={selectedCard?.name}
             effect={selectedCard?.effect}
             image={selectedCard?.image}
+            type={selectedCard?.type}
           />
           <TouchableOpacity
             onPress={() => setSelectedCard(null)}

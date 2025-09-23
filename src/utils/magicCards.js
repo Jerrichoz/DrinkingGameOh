@@ -1,5 +1,5 @@
 // src/utils/magicCards.js
-export const magics = [
+const baseMagics = [
   {
     name: "Topf der Gier",
     effect: "Verteile zwei Schlücke.",
@@ -17,4 +17,10 @@ export const magics = [
       "Such ein Spieler aus, jedes mal wenn er trinken muss, trinkst du einen. Wenn aber du trinken musst, trinkt er einen.",
     image: require("../../assets/images/magicimgs/change_of_heart.png"),
   },
+  {
+    name: "Gemeinsam sind wir nass!",
+    effect: "Pro Anzal der Gesamtspieler, trinkt jeder einen kurzen.",
+    image: require("../../assets/images/magicimgs/united_we_stand.png"),
+  },
 ];
+export const magics = baseMagics.map((c) => ({ ...c, type: "magic" }));

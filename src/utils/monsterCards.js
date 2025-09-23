@@ -1,5 +1,5 @@
 // src/utils/monsterCards.js
-export const monsters = [
+const baseMonsters = [
   {
     name: "Dunkler Magier",
     effect: "Zieh eine neue Falle, wenn dir deine nicht gefällt.",
@@ -22,3 +22,4 @@ export const monsters = [
     image: require("../../assets/images/monsterimgs/zorc.png"),
   },
 ];
+export const monsters = baseMonsters.map((c) => ({ ...c, type: "monster" }));
