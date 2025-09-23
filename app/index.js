@@ -1,36 +1,37 @@
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Button, Text, TextInput, View } from 'react-native';
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { Text, TouchableOpacity } from "react-native";
 
-export default function Start() {
-  const [name, setName] = useState('');
+export default function Index() {
   const router = useRouter();
 
-  const handleJoin = () => {
-    if (name.trim().length > 0) {
-      // Name als Parameter an die Lobby weitergeben
-      router.push({ pathname: '/lobby', params: { playerName: name } });
-    }
-  };
-
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 }}>
-      <Text style={{ fontSize: 24 }}>Yu-Gi-Oh! Trinkspiel 🍻</Text>
+    <LinearGradient
+      colors={["#1a0033", "#000000"]}
+      style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+    >
+      <Text style={{ fontSize: 28, color: "#fff", marginBottom: 40 }}>
+        🔥 Yu-Gi-Oh! Trinkspiel
+      </Text>
 
-      <TextInput
-        placeholder="Dein Spielername"
-        value={name}
-        onChangeText={setName}
+      <TouchableOpacity
         style={{
-          borderWidth: 1,
-          borderColor: '#aaa',
-          padding: 10,
-          width: 200,
-          textAlign: 'center',
+          backgroundColor: "#3A9D8E", // Magie-Farbe
+          paddingVertical: 16,
+          paddingHorizontal: 32,
+          borderRadius: 14,
+          shadowColor: "#000",
+          shadowOpacity: 0.4,
+          shadowOffset: { width: 2, height: 4 },
+          shadowRadius: 6,
+          elevation: 6, // Android-Schatten
         }}
-      />
-
-      <Button title="Lobby beitreten" onPress={handleJoin} />
-    </View>
+        onPress={() => router.push("/lobby")}
+      >
+        <Text style={{ color: "#fff", fontSize: 18, fontWeight: "bold" }}>
+          ➡️ Lobby betreten
+        </Text>
+      </TouchableOpacity>
+    </LinearGradient>
   );
 }

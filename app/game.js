@@ -90,7 +90,7 @@ export default function Game() {
         <Text style={{ color: "#fff" }}>✨ Magie-Stapel</Text>
       </View>
 
-      {/* Eigener Bereich (unten) */}
+      {/* Eigener Bereich */}
       <View style={{ alignItems: "center", marginBottom: 20 }}>
         {players.slice(0, 1).map((p) => (
           <View key={p.id} style={{ flexDirection: "row", gap: 10 }}>
@@ -101,14 +101,14 @@ export default function Game() {
         <Text style={gameStyles.playerName}>Player 1 (Me)</Text>
       </View>
 
-      {/* Modal für große Ansicht */}
+      {/* Modal */}
       <Modal visible={!!selectedCard} transparent={true} animationType="fade">
         <View style={gameStyles.modalContainer}>
           <Card
             title={selectedCard?.name}
             effect={selectedCard?.effect}
             image={selectedCard?.image}
-            type={selectedCard?.type}
+            type={selectedCard?.type} // <- wichtig
           />
           <TouchableOpacity
             onPress={() => setSelectedCard(null)}

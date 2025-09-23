@@ -17,7 +17,7 @@ export default function Gallery() {
   const router = useRouter();
   const [selectedCard, setSelectedCard] = useState(null);
 
-  // Alle Karten zusammenführen, mit Typ markieren
+  // Alle Karten mit Typ (kommt schon aus utils)
   const allCards = [...monsters, ...magics, ...traps];
 
   return (
@@ -55,7 +55,7 @@ export default function Gallery() {
         ))}
       </ScrollView>
 
-      {/* Modal für große Ansicht */}
+      {/* Modal */}
       <Modal visible={!!selectedCard} transparent animationType="fade">
         <View
           style={{
@@ -69,6 +69,7 @@ export default function Gallery() {
             title={selectedCard?.name}
             effect={selectedCard?.effect}
             image={selectedCard?.image}
+            type={selectedCard?.type} // <- wichtig
           />
           <TouchableOpacity
             onPress={() => setSelectedCard(null)}
@@ -79,7 +80,7 @@ export default function Gallery() {
         </View>
       </Modal>
 
-      {/* Back Button */}
+      {/* Zurück */}
       <TouchableOpacity
         onPress={() => router.back()}
         style={{ position: "absolute", top: 40, left: 20 }}

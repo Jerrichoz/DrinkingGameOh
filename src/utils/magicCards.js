@@ -8,7 +8,7 @@ const baseMagics = [
   {
     name: "Schwarzes Loch",
     effect:
-      "Alle Mosnter verschwinden vom Spielfeld. Jeder zieht ein neues Monster und dafür auch einen trinken.",
+      "Alle Monster werden vernichtet. Jeder Spieler zieht ein neues Monster und dafür muss er auch einen trinken.",
     image: require("../../assets/images/magicimgs/black_hole.png"),
   },
   {

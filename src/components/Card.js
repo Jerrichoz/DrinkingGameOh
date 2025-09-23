@@ -1,20 +1,18 @@
 import { Image, StyleSheet, Text, View } from "react-native";
 
 export default function Card({ title, effect, image, type = "monster" }) {
-  // Farben je nach Typ
   const typeColors = {
-    monster: "#C9A66B", // braun/beige
-    magic: "#3A9D8E", // grün/türkis
-    trap: "#8B3A62", // lila/rot
+    monster: "#C9A66B",
+    magic: "#3A9D8E",
+    trap: "#8B3A62",
   };
 
   const cardColor = typeColors[type] || "#C9A66B";
 
   return (
     <View style={[styles.card, { borderColor: cardColor }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: cardColor }]}>
-        <Text style={styles.title}>{title}</Text>
+      {/* Typ-Leiste oben */}
+      <View style={[styles.typeRow, { backgroundColor: cardColor }]}>
         <Text style={styles.typeLabel}>
           {type === "magic"
             ? "[MAGIEKARTE]"
@@ -24,7 +22,12 @@ export default function Card({ title, effect, image, type = "monster" }) {
         </Text>
       </View>
 
-      {/* Bildbereich */}
+      {/* Titel darunter, eigene Zeile */}
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{title}</Text>
+      </View>
+
+      {/* Bild */}
       <View style={styles.imageContainer}>
         <Image
           source={image || require("../../assets/default_card.png")}
@@ -49,18 +52,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#e6e0d4",
     overflow: "hidden",
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  typeRow: {
     padding: 6,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#000",
+    alignItems: "flex-end", // Typ immer rechts
   },
   typeLabel: {
     fontSize: 12,
+    fontWeight: "bold",
+    color: "#000",
+  },
+  titleRow: {
+    paddingHorizontal: 6,
+    paddingBottom: 4,
+  },
+  title: {
+    fontSize: 16,
     fontWeight: "bold",
     color: "#000",
   },
