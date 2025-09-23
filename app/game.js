@@ -1,71 +1,44 @@
-import { useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
 import { Image, Modal, Text, TouchableOpacity, View } from "react-native";
 import Card from "../src/components/Card";
-import { magics } from "../src/utils/magicCards";
-import { monsters } from "../src/utils/monsterCards";
-import { traps } from "../src/utils/trapCards";
+import { useGameLogic } from "../src/hooks/useGameLogic";
+import { gameStyles } from "../src/styles/gameStyles";
 
 export default function Game() {
-  // Beispiel-Spieler (später aus Lobby dynamisch)
-  const players = [
-    {
-      id: 1,
-      name: "Player 1 (Me)",
-      monster: monsters[0],
-      trap: traps[0],
-      isMe: true,
-    },
-    { id: 2, name: "P2", monster: monsters[1], trap: traps[1] },
-    { id: 3, name: "P3", monster: monsters[2], trap: traps[2] },
-    { id: 4, name: "P4", monster: monsters[0], trap: traps[1] },
-    { id: 5, name: "P5", monster: monsters[1], trap: traps[2] },
-  ];
+  const {
+    players,
+    selectedCard,
+    setSelectedCard,
+    handleCardPress,
+    handleDrawMagic,
+  } = useGameLogic();
 
-  const [selectedCard, setSelectedCard] = useState(null);
-
-  const handleCardPress = (player, card, type) => {
-    if (type === "trap" && !player.isMe) return; // nur eigene Falle klickbar
-    setSelectedCard({ ...card, type });
-  };
-
-  // Magiekarte ziehen
-  const handleDrawMagic = () => {
-    const randomMagic = magics[Math.floor(Math.random() * magics.length)];
-    setSelectedCard({ ...randomMagic, type: "magic" });
-  };
-
-  // Fallen-Karten UI (immer Rückseite)
   const TrapCard = ({ player }) => (
     <TouchableOpacity
       onPress={() => handleCardPress(player, player.trap, "trap")}
     >
       <Image
         source={require("../assets/card_back.png")}
-        style={{ width: 50, height: 80, resizeMode: "cover", marginTop: 5 }}
+        style={gameStyles.trapImage}
       />
     </TouchableOpacity>
   );
 
-  // Monster-Karten UI (zeigen Bild in klein)
   const MonsterCard = ({ player }) => (
     <TouchableOpacity
       onPress={() => handleCardPress(player, player.monster, "monster")}
     >
       <Image
         source={player.monster.image || require("../assets/default_card.png")}
-        style={{ width: 50, height: 80, resizeMode: "cover" }}
+        style={gameStyles.cardImage}
       />
     </TouchableOpacity>
   );
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: "#fff",
-        justifyContent: "space-between",
-        padding: 20,
-      }}
+    <LinearGradient
+      colors={["#1a0033", "#000000"]}
+      style={gameStyles.container}
     >
       {/* Oberes Spielfeld */}
       <View
@@ -79,7 +52,7 @@ export default function Game() {
           <View key={p.id} style={{ alignItems: "center" }}>
             <MonsterCard player={p} />
             <TrapCard player={p} />
-            <Text>{p.name}</Text>
+            <Text style={gameStyles.playerName}>{p.name}</Text>
           </View>
         ))}
       </View>
@@ -90,7 +63,7 @@ export default function Game() {
           <View key={p.id} style={{ alignItems: "center" }}>
             <MonsterCard player={p} />
             <TrapCard player={p} />
-            <Text>{p.name}</Text>
+            <Text style={gameStyles.playerName}>{p.name}</Text>
           </View>
         ))}
       </View>
@@ -101,20 +74,20 @@ export default function Game() {
           <View key={p.id} style={{ alignItems: "center" }}>
             <MonsterCard player={p} />
             <TrapCard player={p} />
-            <Text>{p.name}</Text>
+            <Text style={gameStyles.playerName}>{p.name}</Text>
           </View>
         ))}
       </View>
 
       {/* Magie-Stapel in der Mitte */}
-      <View style={{ alignItems: "center", marginBottom: 100 }}>
+      <View style={gameStyles.magicStack}>
         <TouchableOpacity onPress={handleDrawMagic}>
           <Image
             source={require("../assets/card_back.png")}
             style={{ width: 70, height: 110, resizeMode: "cover" }}
           />
         </TouchableOpacity>
-        <Text>✨ Magie-Stapel</Text>
+        <Text style={{ color: "#fff" }}>✨ Magie-Stapel</Text>
       </View>
 
       {/* Eigener Bereich (unten) */}
@@ -125,19 +98,12 @@ export default function Game() {
             <TrapCard player={p} />
           </View>
         ))}
-        <Text>Player 1 (Me)</Text>
+        <Text style={gameStyles.playerName}>Player 1 (Me)</Text>
       </View>
 
       {/* Modal für große Ansicht */}
       <Modal visible={!!selectedCard} transparent={true} animationType="fade">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.7)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <View style={gameStyles.modalContainer}>
           <Card
             title={selectedCard?.name}
             effect={selectedCard?.effect}
@@ -151,6 +117,6 @@ export default function Game() {
           </TouchableOpacity>
         </View>
       </Modal>
-    </View>
+    </LinearGradient>
   );
 }

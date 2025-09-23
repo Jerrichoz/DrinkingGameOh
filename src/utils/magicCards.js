@@ -3,17 +3,18 @@ export const magics = [
   {
     name: "Topf der Gier",
     effect: "Verteile zwei Schlücke.",
+    image: require("../../assets/images/magicimgs/pot_of_greed.png"),
   },
   {
     name: "Schwarzes Loch",
-    effect: "Alle außer dir trinken.",
+    effect:
+      "Alle Mosnter verschwinden vom Spielfeld. Jeder zieht ein neues Monster und dafür auch einen trinken.",
+    image: require("../../assets/images/magicimgs/black_hole.png"),
   },
   {
-    name: "Change of Heart",
-    effect: "Bestimme einen Spieler, der für dich trinken muss.",
-  },
-  {
-    name: "Zwangsevakuierungsgerät",
-    effect: "Der letzte Spieler muss nochmal trinken.",
+    name: "Überläufer",
+    effect:
+      "Such ein Spieler aus, jedes mal wenn er trinken muss, trinkst du einen. Wenn aber du trinken musst, trinkt er einen.",
+    image: require("../../assets/images/magicimgs/change_of_heart.png"),
   },
 ];
