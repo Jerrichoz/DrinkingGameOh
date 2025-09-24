@@ -1,11 +1,14 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity } from "react-native";
+import { db } from "../firebaseConfig";
 
 export default function Index() {
   const router = useRouter();
   const [playerName, setPlayerName] = useState("");
+  const [dbStatus, setDbStatus] = useState("⏳ Firestore wird getestet...");
 
   const buttonStyle = {
     backgroundColor: "#D9C9A3",
@@ -23,6 +26,32 @@ export default function Index() {
     fontWeight: "bold",
   };
 
+  // Firestore-Test
+  useEffect(() => {
+    const testFirestore = async () => {
+      try {
+        console.log("🔄 Firestore-Test startet...");
+
+        const ref = doc(db, "tests", "connectionCheck");
+        await setDoc(ref, { ok: true, time: Date.now() });
+
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          console.log("✅ Firestore verbunden:", snap.data());
+          setDbStatus("✅ Firestore verbunden!");
+        } else {
+          console.warn("⚠️ Firestore verbunden, aber Dokument nicht gefunden.");
+          setDbStatus("⚠️ Firestore verbunden, aber kein Dokument.");
+        }
+      } catch (error) {
+        console.error("❌ Firestore-Verbindung fehlgeschlagen:", error);
+        setDbStatus("❌ Keine Firestore-Verbindung!");
+      }
+    };
+
+    testFirestore();
+  }, []);
+
   return (
     <LinearGradient
       colors={["#1a0033", "#000000"]}
@@ -31,6 +60,9 @@ export default function Index() {
       <Text style={{ fontSize: 28, color: "#fff", marginBottom: 20 }}>
         🔥 Yu-Gi-Oh! Trinkspiel
       </Text>
+
+      {/* Firestore Status */}
+      <Text style={{ color: "#fff", marginBottom: 10 }}>{dbStatus}</Text>
 
       {/* Eingabe Spielername */}
       <TextInput

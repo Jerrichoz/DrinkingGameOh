@@ -2,11 +2,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams } from "expo-router";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, Modal, Text, TouchableOpacity, View } from "react-native";
 import { db } from "../firebaseConfig";
 import Card from "../src/components/Card";
 import { gameStyles } from "../src/styles/gameStyles";
-import { magics } from "../src/utils/magicCards"; // dein Magic-Karten-Array
+import { magics } from "../src/utils/magicCards";
 
 // Zufällige Karte ziehen
 const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -14,6 +14,7 @@ const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
 export default function Game() {
   const { lobbyId, playerName } = useLocalSearchParams();
   const [lobby, setLobby] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
 
   const lobbyRef = doc(db, "lobbies", lobbyId);
 
@@ -23,22 +24,32 @@ export default function Game() {
     const unsub = onSnapshot(lobbyRef, (snap) => {
       if (snap.exists()) {
         setLobby(snap.data());
+      } else {
+        setLobby(null);
       }
     });
     return unsub;
   }, [lobbyId]);
 
-  // Ziehen-Button → neue Magiekarte + nächsten Spieler
+  // Karte ziehen
   const handleDraw = async () => {
-    const newMagic = random(magics);
-    const nextTurn = (lobby.turn + 1) % lobby.players.length;
+    if (!lobby || !lobby.players) return;
 
-    await updateDoc(lobbyRef, {
-      lastMagic: newMagic,
-      turn: nextTurn,
-    });
+    const newMagic = random(magics);
+    const currentTurn = lobby.turn ?? 0;
+    const nextTurn = (currentTurn + 1) % lobby.players.length;
+
+    try {
+      await updateDoc(lobbyRef, {
+        lastMagic: newMagic,
+        turn: nextTurn,
+      });
+    } catch (err) {
+      console.error("[DRAW ERROR]", err);
+    }
   };
 
+  // Lade-Status
   if (!lobby) {
     return (
       <LinearGradient
@@ -50,6 +61,7 @@ export default function Game() {
     );
   }
 
+  // Lobby wartet noch
   if (lobby.status === "waiting") {
     return (
       <LinearGradient
@@ -60,7 +72,7 @@ export default function Game() {
           ⏳ Warte auf Host, bis das Spiel startet...
         </Text>
         <View style={{ marginTop: 30 }}>
-          {lobby.players.map((p) => (
+          {lobby.players?.map((p) => (
             <Text key={p.id} style={{ color: p.ready ? "#0f0" : "#fff" }}>
               {p.name} {p.isHost ? "(Host)" : ""} {p.ready ? "✅" : "⏳"}
             </Text>
@@ -71,7 +83,9 @@ export default function Game() {
   }
 
   // Aktueller Spieler
-  const currentPlayer = lobby.players[lobby.turn];
+  const players = lobby.players || [];
+  const currentTurn = lobby.turn ?? 0;
+  const currentPlayer = players[currentTurn];
   const isMyTurn = currentPlayer?.name === playerName;
 
   return (
@@ -91,18 +105,37 @@ export default function Game() {
           marginTop: 40,
         }}
       >
-        {lobby.players.map((p, idx) => (
+        {players.map((p, idx) => (
           <View key={p.id} style={{ alignItems: "center" }}>
-            <Image
-              source={require("../assets/card_back.png")}
-              style={gameStyles.cardImage}
-            />
-            <Image
-              source={require("../assets/card_back.png")}
-              style={gameStyles.trapImage}
-            />
+            {/* Monsterkarte → immer offen */}
+            <TouchableOpacity
+              onPress={() => setSelectedCard({ ...p.monster, type: "monster" })}
+            >
+              <Image
+                source={
+                  p.monster?.image
+                    ? p.monster.image
+                    : require("../assets/card_back.png")
+                }
+                style={gameStyles.cardImage}
+              />
+            </TouchableOpacity>
+
+            {/* Fallenkarte → nur eigene anklickbar */}
+            <TouchableOpacity
+              onPress={() =>
+                p.name === playerName &&
+                setSelectedCard({ ...p.trap, type: "trap" })
+              }
+            >
+              <Image
+                source={require("../assets/card_back.png")}
+                style={gameStyles.trapImage}
+              />
+            </TouchableOpacity>
+
             <Text style={{ color: "#fff" }}>
-              {p.name} {idx === lobby.turn ? "⭐" : ""}
+              {p.name} {idx === currentTurn ? "⭐" : ""}
             </Text>
           </View>
         ))}
@@ -128,7 +161,7 @@ export default function Game() {
             onPress={handleDraw}
           >
             <Text style={{ color: "#2E1F12", fontWeight: "bold" }}>
-              ✨ Draw
+              ✨ Ziehen
             </Text>
           </TouchableOpacity>
         )}
@@ -149,6 +182,38 @@ export default function Game() {
           />
         </View>
       )}
+
+      {/* Modal für Vergrößerung */}
+      <Modal
+        visible={!!selectedCard}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedCard(null)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.7)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          {selectedCard && (
+            <Card
+              title={selectedCard.name}
+              effect={selectedCard.effect}
+              image={selectedCard.image}
+              type={selectedCard.type}
+            />
+          )}
+          <TouchableOpacity
+            onPress={() => setSelectedCard(null)}
+            style={{ marginTop: 20 }}
+          >
+            <Text style={{ color: "#fff", fontSize: 18 }}>Schließen</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
