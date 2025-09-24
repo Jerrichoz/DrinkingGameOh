@@ -1,36 +1,72 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Text, TouchableOpacity } from "react-native";
+import { useState } from "react";
+import { Text, TextInput, TouchableOpacity } from "react-native";
 
 export default function Index() {
   const router = useRouter();
+  const [playerName, setPlayerName] = useState("");
+
+  const buttonStyle = {
+    backgroundColor: "#D9C9A3",
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 12,
+    borderWidth: 3,
+    borderColor: "#5C4033",
+    marginTop: 20,
+  };
+
+  const textStyle = {
+    color: "#2E1F12",
+    fontSize: 18,
+    fontWeight: "bold",
+  };
 
   return (
     <LinearGradient
       colors={["#1a0033", "#000000"]}
       style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
     >
-      <Text style={{ fontSize: 28, color: "#fff", marginBottom: 40 }}>
+      <Text style={{ fontSize: 28, color: "#fff", marginBottom: 20 }}>
         🔥 Yu-Gi-Oh! Trinkspiel
       </Text>
 
-      <TouchableOpacity
+      {/* Eingabe Spielername */}
+      <TextInput
+        placeholder="Dein Name"
+        value={playerName}
+        onChangeText={setPlayerName}
         style={{
-          backgroundColor: "#3A9D8E", // Magie-Farbe
-          paddingVertical: 16,
-          paddingHorizontal: 32,
-          borderRadius: 14,
-          shadowColor: "#000",
-          shadowOpacity: 0.4,
-          shadowOffset: { width: 2, height: 4 },
-          shadowRadius: 6,
-          elevation: 6, // Android-Schatten
+          backgroundColor: "#fff",
+          padding: 10,
+          borderRadius: 8,
+          width: 220,
+          textAlign: "center",
+          marginBottom: 30,
         }}
-        onPress={() => router.push("/lobby")}
+      />
+
+      {/* Saufen -> Lobby */}
+      <TouchableOpacity
+        style={buttonStyle}
+        onPress={() =>
+          router.push({ pathname: "/lobby", params: { playerName } })
+        }
+        disabled={!playerName}
       >
-        <Text style={{ color: "#fff", fontSize: 18, fontWeight: "bold" }}>
-          ➡️ Lobby betreten
-        </Text>
+        <Text style={textStyle}>🍻 Saufen</Text>
+      </TouchableOpacity>
+
+      {/* Karten-Galerie */}
+      <TouchableOpacity
+        style={buttonStyle}
+        onPress={() =>
+          router.push({ pathname: "/gallery", params: { playerName } })
+        }
+        disabled={!playerName}
+      >
+        <Text style={textStyle}>📖 Karten-Galerie</Text>
       </TouchableOpacity>
     </LinearGradient>
   );
