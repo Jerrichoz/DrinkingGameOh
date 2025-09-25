@@ -4,7 +4,12 @@ import { doc, getDoc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { db } from "../firebaseConfig";
+import { monsters } from "../src/utils/monsterCards";
+import { traps } from "../src/utils/trapCards";
 
+const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+// Lobby-Code Generator
 const generateCode = () => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   return Array.from({ length: 5 })
@@ -20,7 +25,7 @@ export default function Lobby() {
   const [createdCode, setCreatedCode] = useState(null);
   const [lobbyId, setLobbyId] = useState(null);
   const [players, setPlayers] = useState([]);
-  const [message, setMessage] = useState(null); // Meldungen im UI
+  const [message, setMessage] = useState(null);
 
   const buttonStyle = {
     backgroundColor: "#D9C9A3",
@@ -38,12 +43,23 @@ export default function Lobby() {
     fontWeight: "bold",
   };
 
-  // Live-Updates der Lobby
+  // 🔴 Live-Updates der Lobby
   useEffect(() => {
     if (!lobbyId) return;
     const unsub = onSnapshot(doc(db, "lobbies", lobbyId), (snap) => {
       if (snap.exists()) {
-        setPlayers(snap.data().players);
+        const data = snap.data();
+        console.log("[LOBBY SNAPSHOT]", JSON.stringify(data, null, 2));
+        setPlayers(data.players || []);
+
+        // 🚀 Redirect für ALLE Spieler
+        if (data.status === "playing") {
+          console.log("[LOBBY] Spiel gestartet → Redirect zu /game");
+          router.replace({
+            pathname: "/game",
+            params: { lobbyId, playerName },
+          });
+        }
       }
     });
     return unsub;
@@ -56,19 +72,30 @@ export default function Lobby() {
       setCreatedCode(code);
       setLobbyId(code);
 
-      await setDoc(doc(db, "lobbies", code), {
+      const lobbyData = {
         players: [
           {
             id: Date.now().toString(),
             name: playerName,
             ready: false,
             isHost: true,
+            monster: null,
+            trap: null,
+            shots: 0,
           },
         ],
         status: "waiting",
         createdAt: Date.now(),
-      });
+        turn: 0,
+        lastMagic: null,
+        discardPile: [],
+        round: 1,
+        effectsUsed: {},
+      };
 
+      await setDoc(doc(db, "lobbies", code), lobbyData);
+
+      console.log("[CREATE LOBBY]", lobbyData);
       setMessage({ type: "success", text: `Lobby ${code} erstellt!` });
     } catch (error) {
       console.error("Create Lobby Error:", error);
@@ -83,29 +110,21 @@ export default function Lobby() {
   const joinLobby = async () => {
     if (!joinCode) {
       setMessage({ type: "error", text: "⚠️ Bitte gib einen Lobby-Code ein." });
-      console.log(`[JOIN] ${playerName} → Kein Code eingegeben.`);
       return;
     }
 
     try {
       const code = joinCode.trim().toUpperCase();
-      console.log(`[JOIN] ${playerName} versucht Lobby ${code} beizutreten…`);
-
       const ref = doc(db, "lobbies", code);
       const snap = await getDoc(ref);
 
       if (!snap.exists()) {
-        console.warn(`[JOIN] Lobby ${code} existiert nicht!`);
         setMessage({ type: "error", text: `❌ Lobby ${code} nicht gefunden.` });
         return;
       }
 
       const data = snap.data();
-      console.log(`[JOIN] Aktuelle Spieler in Lobby ${code}:`, data.players);
-
-      // prüfen ob Spieler schon drin ist
       if (data.players.some((p) => p.name === playerName)) {
-        console.log(`[JOIN] ${playerName} ist bereits in Lobby ${code}.`);
         setMessage({
           type: "info",
           text: "ℹ️ Du bist bereits in dieser Lobby.",
@@ -114,33 +133,25 @@ export default function Lobby() {
         return;
       }
 
-      // neuen Spieler hinzufügen
       const newPlayer = {
         id: Date.now().toString(),
         name: playerName,
         ready: false,
         isHost: false,
+        monster: null,
+        trap: null,
+        shots: 0,
       };
 
       const updatedPlayers = [...data.players, newPlayer];
-      console.log(`[JOIN] Füge Spieler hinzu:`, newPlayer);
-
       await updateDoc(ref, { players: updatedPlayers });
 
-      console.log(
-        `[JOIN] ${playerName} erfolgreich Lobby ${code} beigetreten.`
-      );
+      console.log("[JOIN]", playerName, "in Lobby", code);
       setLobbyId(code);
-      setMessage({
-        type: "success",
-        text: `✅ Du bist der Lobby ${code} beigetreten!`,
-      });
+      setMessage({ type: "success", text: `✅ Lobby ${code} beigetreten!` });
     } catch (error) {
-      console.error(`[JOIN ERROR] ${playerName} → Lobby ${joinCode}`, error);
-      setMessage({
-        type: "error",
-        text: "❌ Fehler beim Beitreten. Bitte erneut versuchen.",
-      });
+      console.error("[JOIN ERROR]", error);
+      setMessage({ type: "error", text: "❌ Fehler beim Beitreten." });
     }
   };
 
@@ -159,10 +170,6 @@ export default function Lobby() {
       }
     } catch (error) {
       console.error("Toggle Ready Error:", error);
-      setMessage({
-        type: "error",
-        text: "❌ Konnte Ready-Status nicht ändern.",
-      });
     }
   };
 
@@ -170,8 +177,29 @@ export default function Lobby() {
   const startGame = async () => {
     try {
       const ref = doc(db, "lobbies", lobbyId);
-      await updateDoc(ref, { status: "playing" });
-      router.push({ pathname: "/game", params: { lobbyId, playerName } });
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+
+      const data = snap.data();
+
+      const playersWithCards = data.players.map((p) => ({
+        ...p,
+        monster: random(monsters),
+        trap: random(traps),
+      }));
+
+      await updateDoc(ref, {
+        players: playersWithCards,
+        status: "playing",
+        discardPile: [],
+        round: 1,
+        effectsUsed: {},
+        lastMagic: null,
+      });
+
+      console.log("[START GAME] Host startet Spiel.");
+      // ⚡ Host wird sofort weitergeleitet
+      router.replace({ pathname: "/game", params: { lobbyId, playerName } });
     } catch (error) {
       console.error("Start Game Error:", error);
       setMessage({ type: "error", text: "❌ Fehler beim Starten des Spiels." });
@@ -192,8 +220,7 @@ export default function Lobby() {
         padding: 20,
       }}
     >
-      {/* ✅ Status-Balken */}
-      {(lobbyId || message) && (
+      {message && (
         <View
           style={{
             position: "absolute",
@@ -203,16 +230,15 @@ export default function Lobby() {
             padding: 10,
             backgroundColor:
               message?.type === "error"
-                ? "#b71c1c" // rot
+                ? "#b71c1c"
                 : message?.type === "success"
-                ? "#1b5e20" // grün
-                : "#f57f17", // gelb
+                ? "#1b5e20"
+                : "#f57f17",
             alignItems: "center",
-            zIndex: 100,
           }}
         >
           <Text style={{ color: "#fff", fontWeight: "bold" }}>
-            {message ? message.text : `✅ Verbunden mit Lobby ${lobbyId}`}
+            {message.text}
           </Text>
         </View>
       )}
@@ -222,27 +248,12 @@ export default function Lobby() {
       </Text>
       <Text style={{ color: "#fff" }}>👤 Spielername: {playerName}</Text>
 
-      {/* Meldungen */}
-      {message && (
-        <Text
-          style={{
-            color: message.type === "error" ? "#ff4d4d" : "#00e676",
-            marginTop: 10,
-            textAlign: "center",
-          }}
-        >
-          {message.text}
-        </Text>
-      )}
-
       {!lobbyId && (
         <>
-          {/* Lobby erstellen */}
           <TouchableOpacity style={buttonStyle} onPress={createLobby}>
             <Text style={textStyle}>✨ Lobby erstellen</Text>
           </TouchableOpacity>
 
-          {/* Lobby beitreten */}
           <TextInput
             placeholder="Lobby-Code eingeben"
             value={joinCode}
@@ -269,7 +280,6 @@ export default function Lobby() {
         </Text>
       )}
 
-      {/* Spieler-Liste */}
       {players.length > 0 && (
         <View style={{ marginTop: 30, alignItems: "center" }}>
           <Text style={{ color: "#fff", fontWeight: "bold" }}>
@@ -283,7 +293,6 @@ export default function Lobby() {
         </View>
       )}
 
-      {/* Ready-Button */}
       {me && (
         <TouchableOpacity style={buttonStyle} onPress={toggleReady}>
           <Text style={textStyle}>
@@ -292,7 +301,6 @@ export default function Lobby() {
         </TouchableOpacity>
       )}
 
-      {/* Host darf starten */}
       {me?.isHost && allReady && (
         <TouchableOpacity style={buttonStyle} onPress={startGame}>
           <Text style={textStyle}>▶️ Spiel starten</Text>

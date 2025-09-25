@@ -2,14 +2,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams } from "expo-router";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Image, Modal, Text, TouchableOpacity, View } from "react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import { db } from "../firebaseConfig";
-import Card from "../src/components/Card";
 import { gameStyles } from "../src/styles/gameStyles";
-import { magics } from "../src/utils/magicCards";
-
-// Zufällige Karte ziehen
-const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
+import { randomMagic } from "../src/utils/gameLogic";
 
 export default function Game() {
   const { lobbyId, playerName } = useLocalSearchParams();
@@ -18,38 +14,67 @@ export default function Game() {
 
   const lobbyRef = doc(db, "lobbies", lobbyId);
 
-  // Live-Updates der Lobby
+  // --- Live-Updates ---
   useEffect(() => {
     if (!lobbyId) return;
     const unsub = onSnapshot(lobbyRef, (snap) => {
       if (snap.exists()) {
-        setLobby(snap.data());
-      } else {
-        setLobby(null);
+        const data = snap.data();
+        setLobby({
+          players: data.players || [],
+          turn: data.turn ?? 0,
+          lastMagic: data.lastMagic || null,
+          showMagic: data.showMagic || false,
+          discardPile: data.discardPile || [],
+          round: data.round || 1,
+          effectsUsed: data.effectsUsed || {},
+          ...data,
+        });
       }
     });
     return unsub;
   }, [lobbyId]);
 
-  // Karte ziehen
+  // --- Karte ziehen ---
   const handleDraw = async () => {
-    if (!lobby || !lobby.players) return;
-
-    const newMagic = random(magics);
-    const currentTurn = lobby.turn ?? 0;
-    const nextTurn = (currentTurn + 1) % lobby.players.length;
-
+    if (!lobby) return;
     try {
+      const newMagic = randomMagic();
+      console.log("[DRAW] Neue Karte gezogen:", newMagic);
       await updateDoc(lobbyRef, {
         lastMagic: newMagic,
-        turn: nextTurn,
+        showMagic: false,
       });
+      // gezogene Karte sofort für mich im Modal anzeigen
+      setSelectedCard({ ...newMagic, type: "magic" });
     } catch (err) {
       console.error("[DRAW ERROR]", err);
     }
   };
 
-  // Lade-Status
+  // --- Karte zeigen ---
+  const handleShow = async () => {
+    try {
+      console.log("[SHOW] Spieler zeigt Karte:", lobby.lastMagic);
+      await updateDoc(lobbyRef, { showMagic: true });
+    } catch (err) {
+      console.error("[SHOW ERROR]", err);
+    }
+  };
+
+  // --- Karte ablegen ---
+  const handleDiscard = async () => {
+    if (!lobby) return;
+    const discardPile = [...(lobby.discardPile || []), lobby.lastMagic];
+    const nextTurn = ((lobby.turn ?? 0) + 1) % (lobby.players?.length || 1);
+    await updateDoc(lobbyRef, {
+      discardPile,
+      lastMagic: null,
+      turn: nextTurn,
+      showMagic: false,
+    });
+  };
+
   if (!lobby) {
     return (
       <LinearGradient
@@ -61,159 +86,171 @@ export default function Game() {
     );
   }
 
-  // Lobby wartet noch
-  if (lobby.status === "waiting") {
-    return (
-      <LinearGradient
-        colors={["#1a0033", "#000000"]}
-        style={gameStyles.container}
-      >
-        <Text style={{ color: "#fff", fontSize: 20 }}>
-          ⏳ Warte auf Host, bis das Spiel startet...
-        </Text>
-        <View style={{ marginTop: 30 }}>
-          {lobby.players?.map((p) => (
-            <Text key={p.id} style={{ color: p.ready ? "#0f0" : "#fff" }}>
-              {p.name} {p.isHost ? "(Host)" : ""} {p.ready ? "✅" : "⏳"}
-            </Text>
-          ))}
-        </View>
-      </LinearGradient>
-    );
-  }
-
-  // Aktueller Spieler
   const players = lobby.players || [];
-  const currentTurn = lobby.turn ?? 0;
-  const currentPlayer = players[currentTurn];
-  const isMyTurn = currentPlayer?.name === playerName;
+  const me = players.find((p) => p.name === playerName);
+  const others = players.filter((p) => p.name !== playerName);
+  const isMyTurn = players[lobby.turn]?.name === playerName;
 
   return (
     <LinearGradient
       colors={["#1a0033", "#000000"]}
       style={gameStyles.container}
     >
-      <Text style={{ color: "#fff", fontSize: 22, marginBottom: 20 }}>
+      <Text
+        style={{
+          color: "#fff",
+          fontSize: 22,
+          marginBottom: 10,
+          textAlign: "center",
+        }}
+      >
         🎴 Spiel läuft – Lobby {lobbyId}
       </Text>
 
-      {/* Spielerübersicht */}
+      {/* Gegnerkarten oben */}
       <View
         style={{
-          flexDirection: "row",
-          justifyContent: "space-around",
-          marginTop: 40,
+          flexDirection: "row", // alle Gegner nebeneinander
+          justifyContent: "center",
+          marginBottom: 40,
         }}
       >
-        {players.map((p, idx) => (
-          <View key={p.id} style={{ alignItems: "center" }}>
-            {/* Monsterkarte → immer offen */}
-            <TouchableOpacity
-              onPress={() => setSelectedCard({ ...p.monster, type: "monster" })}
-            >
-              <Image
-                source={
-                  p.monster?.image
-                    ? p.monster.image
-                    : require("../assets/card_back.png")
-                }
-                style={gameStyles.cardImage}
-              />
-            </TouchableOpacity>
+        {others.map((p) => (
+          <View
+            key={p.id}
+            style={{ alignItems: "center", marginHorizontal: 10 }}
+          >
+            {/* Karten nebeneinander */}
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              {p.monster && (
+                <Image
+                  source={p.monster.image}
+                  style={{ width: 60, height: 90 }}
+                  resizeMode="cover"
+                />
+              )}
+              {p.trap && (
+                <Image
+                  source={require("../assets/images/card_back.png")}
+                  style={{ width: 60, height: 90 }}
+                  resizeMode="cover"
+                />
+              )}
+            </View>
 
-            {/* Fallenkarte → nur eigene anklickbar */}
-            <TouchableOpacity
-              onPress={() =>
-                p.name === playerName &&
-                setSelectedCard({ ...p.trap, type: "trap" })
-              }
-            >
-              <Image
-                source={require("../assets/card_back.png")}
-                style={gameStyles.trapImage}
-              />
-            </TouchableOpacity>
-
-            <Text style={{ color: "#fff" }}>
-              {p.name} {idx === currentTurn ? "⭐" : ""}
-            </Text>
+            {/* Spielername */}
+            <Text style={{ color: "#fff", marginTop: 5 }}>{p.name}</Text>
           </View>
         ))}
       </View>
 
       {/* Magiestapel in der Mitte */}
-      <View style={{ alignItems: "center", marginTop: 60 }}>
-        <Image
-          source={require("../assets/card_back.png")}
-          style={{ width: 80, height: 120, resizeMode: "cover" }}
-        />
-        {isMyTurn && (
+      <View style={{ alignItems: "center", marginBottom: 40 }}>
+        <TouchableOpacity onPress={handleDraw}>
+          <Image
+            source={require("../assets/images/card_back.png")}
+            style={{ width: 80, height: 120 }}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+        <Text style={{ color: "#fff", marginTop: 5 }}>Magiestapel</Text>
+
+        {isMyTurn && !lobby.lastMagic && (
           <TouchableOpacity
-            style={{
-              marginTop: 12,
-              backgroundColor: "#D9C9A3",
-              paddingVertical: 8,
-              paddingHorizontal: 16,
-              borderRadius: 8,
-              borderWidth: 2,
-              borderColor: "#5C4033",
-            }}
             onPress={handleDraw}
+            style={{
+              marginTop: 10,
+              backgroundColor: "#D9C9A3",
+              padding: 10,
+              borderRadius: 8,
+            }}
           >
-            <Text style={{ color: "#2E1F12", fontWeight: "bold" }}>
-              ✨ Ziehen
-            </Text>
+            <Text>✨ Ziehen</Text>
           </TouchableOpacity>
         )}
-        <Text style={{ color: "#fff", marginTop: 10 }}>Magiestapel</Text>
+
+        {lobby.lastMagic && (
+          <View style={{ alignItems: "center", marginTop: 10 }}>
+            {lobby.showMagic ? (
+              <>
+                <Image
+                  source={lobby.lastMagic.image}
+                  style={{ width: 100, height: 150 }}
+                />
+                <Text style={{ color: "#fff", marginTop: 5 }}>
+                  {lobby.lastMagic.name}
+                </Text>
+                {isMyTurn && (
+                  <TouchableOpacity
+                    onPress={handleDiscard}
+                    style={{
+                      marginTop: 10,
+                      backgroundColor: "#D9C9A3",
+                      padding: 10,
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Text>🗑️ Ablegen</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            ) : (
+              isMyTurn && (
+                <TouchableOpacity
+                  onPress={handleShow}
+                  style={{
+                    marginTop: 10,
+                    backgroundColor: "#D9C9A3",
+                    padding: 10,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text>👁️ Aufdecken</Text>
+                </TouchableOpacity>
+              )
+            )}
+          </View>
+        )}
       </View>
 
-      {/* Letzte gezogene Magiekarte */}
-      {lobby.lastMagic && (
-        <View style={{ marginTop: 40, alignItems: "center" }}>
-          <Text style={{ color: "#fff", marginBottom: 10 }}>
-            Letzte Magiekarte:
-          </Text>
-          <Card
-            title={lobby.lastMagic.name}
-            effect={lobby.lastMagic.effect}
-            image={lobby.lastMagic.image}
-            type="magic"
-          />
-        </View>
-      )}
-
-      {/* Modal für Vergrößerung */}
-      <Modal
-        visible={!!selectedCard}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSelectedCard(null)}
+      {/* Eigene Karten unten nebeneinander */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "center",
+          marginTop: "auto",
+        }}
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.7)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          {selectedCard && (
-            <Card
-              title={selectedCard.name}
-              effect={selectedCard.effect}
-              image={selectedCard.image}
-              type={selectedCard.type}
+        {me?.monster && (
+          <Image
+            source={me.monster.image}
+            style={{ width: 100, height: 150, marginHorizontal: 10 }}
+            resizeMode="cover"
+          />
+        )}
+        {me?.trap && (
+          <TouchableOpacity>
+            <Image
+              source={
+                me.trapRevealed
+                  ? me.trap.image
+                  : require("../assets/images/card_back.png")
+              }
+              style={{ width: 100, height: 150, marginHorizontal: 10 }}
+              resizeMode="cover"
             />
-          )}
-          <TouchableOpacity
-            onPress={() => setSelectedCard(null)}
-            style={{ marginTop: 20 }}
-          >
-            <Text style={{ color: "#fff", fontSize: 18 }}>Schließen</Text>
           </TouchableOpacity>
-        </View>
-      </Modal>
+        )}
+      </View>
+
+      <Text style={{ color: "#fff", marginTop: 10, textAlign: "center" }}>
+        {me?.name} (Du)
+      </Text>
     </LinearGradient>
   );
+  {
+    /* Modal für vergrößerte Karten */
+  }
+  {
+  }
 }

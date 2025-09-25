@@ -10,15 +10,21 @@ export const gameStyles = StyleSheet.create({
     color: "#fff",
     marginTop: 4,
   },
-  cardImage: {
-    width: 50,
-    height: 80,
-    resizeMode: "cover",
+  cardImageSmall: {
+    width: 60,
+    height: 90,
+  },
+  cardImageMedium: {
+    width: 80,
+    height: 120,
+  },
+  cardImageLarge: {
+    width: 100,
+    height: 150,
   },
   trapImage: {
     width: 50,
     height: 80,
-    resizeMode: "cover",
     marginTop: 5,
   },
   magicStack: {

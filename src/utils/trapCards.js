@@ -1,20 +1,24 @@
-// src/utils/trapCards.js
+// Images importieren
+import magicCylinderImg from "../../assets/images/trapimgs/magic_cylinder.png";
+import mirrorForceImg from "../../assets/images/trapimgs/mirror_force.png";
+import trapHoleImg from "../../assets/images/trapimgs/trap_hole.png";
+
 const baseTraps = [
   {
     name: "Spiegelkraft",
     effect: "Wenn nur du trinken musst → alle anderen trinken.",
-    image: require("../../assets/images/trapimgs/mirror_force.png"),
+    image: mirrorForceImg,
   },
   {
     name: "Fallgrube",
     effect: "Wenn ein Gegner sein Monster benutzt → Effekt negiert.",
-    image: require("../../assets/images/trapimgs/trap_hole.png"),
+    image: trapHoleImg,
   },
   {
     name: "Magischer Zylinder",
     effect: "Wenn jemand dich trinken lässt → Effekt zurück.",
-    image: require("../../assets/images/trapimgs/magic_cylinder.png"),
+    image: magicCylinderImg,
   },
 ];
-// beim Export automatisch type hinzufügen
+
 export const traps = baseTraps.map((c) => ({ ...c, type: "trap" }));
