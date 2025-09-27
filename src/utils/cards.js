@@ -24,6 +24,11 @@ export function makeGithubUrl(fileName, cardName = "Unbekannt") {
   return url;
 }
 
+// Google Sheets CSV-URL bauen
+function buildCsvUrl(gid) {
+  return `https://docs.google.com/spreadsheets/d/${process.env.EXPO_PUBLIC_GOOGLE_SHEET_ID}/export?format=csv&gid=${gid}`;
+}
+
 // CSV-Parser
 export async function fetchCSV(url) {
   const res = await fetch(url);
@@ -50,17 +55,18 @@ export async function fetchCSV(url) {
 // Karten laden (Monster, Fallen, Magie)
 export async function fetchAllCards() {
   const monster = await fetchCSV(
-    "https://docs.google.com/spreadsheets/d/1J8gaa-SfBALyJfnMOvBXKFuNe49AtfhfQFsNKqV_fjU/export?format=csv&gid=451899318"
+    buildCsvUrl(process.env.EXPO_PUBLIC_GOOGLE_GID_MONSTER)
   );
   const traps = await fetchCSV(
-    "https://docs.google.com/spreadsheets/d/1J8gaa-SfBALyJfnMOvBXKFuNe49AtfhfQFsNKqV_fjU/export?format=csv&gid=1542620199"
+    buildCsvUrl(process.env.EXPO_PUBLIC_GOOGLE_GID_TRAPS)
   );
   const magics = await fetchCSV(
-    "https://docs.google.com/spreadsheets/d/1J8gaa-SfBALyJfnMOvBXKFuNe49AtfhfQFsNKqV_fjU/export?format=csv&gid=1110294285"
+    buildCsvUrl(process.env.EXPO_PUBLIC_GOOGLE_GID_MAGIC)
   );
-  const monsterCards = monster.map((c) => ({ ...c, type: "MONSTER" }));
-  const trapCards = traps.map((c) => ({ ...c, type: "TRAP" }));
-  const magicCards = magics.map((c) => ({ ...c, type: "MAGIC" }));
 
-  return [...monsterCards, ...trapCards, ...magicCards];
+  return [
+    ...monster.map((c) => ({ ...c, type: "MONSTER" })),
+    ...traps.map((c) => ({ ...c, type: "TRAP" })),
+    ...magics.map((c) => ({ ...c, type: "MAGIC" })),
+  ];
 }
