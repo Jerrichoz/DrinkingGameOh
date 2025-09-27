@@ -8,7 +8,10 @@ const DEFAULT_IMAGE = "default_card.png";
 // Hilfsfunktion: GitHub-Dateiname in URL umwandeln
 export function makeGithubUrl(fileName, cardName = "Unbekannt") {
   if (!fileName || fileName.trim() === "") {
-    const url = `${BASE_URL}/${DEFAULT_IMAGE}`;
+    let url = `${BASE_URL}/${DEFAULT_IMAGE}`;
+    if (__DEV__) {
+      url += `?v=${Date.now()}`; // Cache-Busting nur in Dev
+    }
     console.log(`🖼️ [${cardName}] -> Default Bild genutzt: ${url}`);
     return url;
   }
@@ -19,7 +22,11 @@ export function makeGithubUrl(fileName, cardName = "Unbekannt") {
     finalName = `${finalName}.png`;
   }
 
-  const url = `${BASE_URL}/${finalName}`;
+  let url = `${BASE_URL}/${finalName}`;
+  if (__DEV__) {
+    url += `?v=${Date.now()}`; // Cache-Busting nur in Dev
+  }
+
   console.log(`🖼️ [${cardName}] -> GitHub Bild genutzt: ${url}`);
   return url;
 }
