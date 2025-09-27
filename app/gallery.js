@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Image,
   Modal,
@@ -20,6 +20,11 @@ export default function Gallery() {
     const cards = await fetchAllCards();
     setAllCards(cards);
   }
+
+  // 🔹 Initial laden, wenn die Galerie geöffnet wird
+  useEffect(() => {
+    refreshCards();
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#111" }}>

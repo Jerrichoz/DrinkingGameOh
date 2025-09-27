@@ -2,8 +2,8 @@ import Papa from "papaparse";
 
 // Deine Basis-URL von GitHub Pages (anpassen!)
 const BASE_URL =
-  "https://Jerrichoz.github.io/DrinkingGameOh/assets/images/cards";
-const DEFAULT_IMAGE = "default.png";
+  "https://jerrichoz.github.io/DrinkingGameOh/assets/images/cards";
+const DEFAULT_IMAGE = "default_card.png";
 
 // Hilfsfunktion: GitHub-Dateiname in URL umwandeln
 export function makeGithubUrl(fileName, cardName = "Unbekannt") {
@@ -12,7 +12,14 @@ export function makeGithubUrl(fileName, cardName = "Unbekannt") {
     console.log(`🖼️ [${cardName}] -> Default Bild genutzt: ${url}`);
     return url;
   }
-  const url = `${BASE_URL}/${fileName.trim()}`;
+
+  // automatisch .png anhängen, falls keine Endung drin ist
+  let finalName = fileName.trim();
+  if (!finalName.toLowerCase().endsWith(".png")) {
+    finalName = `${finalName}.png`;
+  }
+
+  const url = `${BASE_URL}/${finalName}`;
   console.log(`🖼️ [${cardName}] -> GitHub Bild genutzt: ${url}`);
   return url;
 }
@@ -31,6 +38,7 @@ export async function fetchCSV(url) {
     .filter((row) => row.name)
     .map((row) => {
       const imageUrl = makeGithubUrl(row.imageName, row.name);
+      console.log("🧩 Karte geladen:", row.name, "effect:", row.effect);
       return {
         name: row.name.trim(),
         effect: row.effect?.trim(),
@@ -50,6 +58,9 @@ export async function fetchAllCards() {
   const magics = await fetchCSV(
     "https://docs.google.com/spreadsheets/d/1J8gaa-SfBALyJfnMOvBXKFuNe49AtfhfQFsNKqV_fjU/export?format=csv&gid=1110294285"
   );
+  const monsterCards = monster.map((c) => ({ ...c, type: "MONSTER" }));
+  const trapCards = traps.map((c) => ({ ...c, type: "TRAP" }));
+  const magicCards = magics.map((c) => ({ ...c, type: "MAGIC" }));
 
-  return [...monster, ...traps, ...magics];
+  return [...monsterCards, ...trapCards, ...magicCards];
 }

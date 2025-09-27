@@ -7,16 +7,29 @@ import {
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "../../firebaseConfig";
-import { magics } from "../utils/magicCards";
-import { monsters } from "../utils/monsterCards";
-import { traps } from "../utils/trapCards";
+import { fetchAllCards } from "../utils/cards";
 
 // Hilfsfunktion: zufällige Karte
 const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 export function useGameFirebase(lobbyId, playerName) {
   const [lobby, setLobby] = useState(null);
+  const [monsters, setMonsters] = useState([]);
+  const [traps, setTraps] = useState([]);
+  const [magics, setMagics] = useState([]);
+
   const lobbyRef = doc(db, "lobbies", lobbyId);
+
+  // Karten aus CSV laden (einmalig)
+  useEffect(() => {
+    async function loadCards() {
+      const all = await fetchAllCards();
+      setMonsters(all.filter((c) => c.type === "monster"));
+      setTraps(all.filter((c) => c.type === "trap"));
+      setMagics(all.filter((c) => c.type === "magic"));
+    }
+    loadCards();
+  }, []);
 
   // Live-Updates der Lobby
   useEffect(() => {
@@ -28,28 +41,34 @@ export function useGameFirebase(lobbyId, playerName) {
 
   // Spieler beitreten (falls noch nicht drin)
   useEffect(() => {
-    const join = async () => {
+    async function join() {
       const snap = await getDoc(lobbyRef);
       if (snap.exists()) {
         const data = snap.data();
         const already = data.players.find((p) => p.name === playerName);
-        if (!already) {
+
+        if (!already && monsters.length > 0 && traps.length > 0) {
           await updateDoc(lobbyRef, {
             players: arrayUnion({
               id: Date.now().toString(),
               name: playerName,
               monster: random(monsters),
               trap: random(traps),
+              shots: 0,
+              ready: false,
+              isHost: false,
             }),
           });
         }
       }
-    };
+    }
     join();
-  }, [playerName]);
+  }, [playerName, monsters, traps]);
 
   // Magiekarte ziehen
   const drawMagic = async () => {
+    if (!lobby || magics.length === 0) return;
+
     const newMagic = random(magics);
     await updateDoc(lobbyRef, {
       lastMagic: newMagic,

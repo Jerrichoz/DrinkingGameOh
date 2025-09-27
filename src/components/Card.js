@@ -30,7 +30,9 @@ export default function Card({ title, effect, image, type = "monster" }) {
       {/* Bild */}
       <View style={styles.imageContainer}>
         <Image
-          source={image || require("../../assets/default_card.png")}
+          source={
+            image || require("../../assets/images/cards/default_card.png")
+          }
           style={styles.image}
         />
       </View>

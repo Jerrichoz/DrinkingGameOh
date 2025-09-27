@@ -4,8 +4,7 @@ import { doc, getDoc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { db } from "../firebaseConfig";
-import { monsters } from "../src/utils/monsterCards";
-import { traps } from "../src/utils/trapCards";
+import { randomMonster, randomTrap } from "../src/utils/gameLogic";
 
 const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -182,11 +181,14 @@ export default function Lobby() {
 
       const data = snap.data();
 
-      const playersWithCards = data.players.map((p) => ({
-        ...p,
-        monster: random(monsters),
-        trap: random(traps),
-      }));
+      // 🚀 Monster & Falle jetzt aus Google Sheet / GitHub
+      const playersWithCards = await Promise.all(
+        data.players.map(async (p) => ({
+          ...p,
+          monster: await randomMonster(),
+          trap: await randomTrap(),
+        }))
+      );
 
       await updateDoc(ref, {
         players: playersWithCards,
@@ -198,7 +200,6 @@ export default function Lobby() {
       });
 
       console.log("[START GAME] Host startet Spiel.");
-      // ⚡ Host wird sofort weitergeleitet
       router.replace({ pathname: "/game", params: { lobbyId, playerName } });
     } catch (error) {
       console.error("Start Game Error:", error);

@@ -6,7 +6,26 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 import { db } from "../firebaseConfig";
 import MagicCardModal from "../src/components/MagicCardModal";
 import { gameStyles } from "../src/styles/gameStyles";
-import { randomMagic } from "../src/utils/gameLogic";
+import { randomMagic, randomMonster, randomTrap } from "../src/utils/gameLogic";
+
+// Beispiel: Spieler joinen und erhalten Startkarten
+const handleJoinGame = async (playerName) => {
+  const monster = await randomMonster();
+  const trap = await randomTrap();
+
+  await updateDoc(lobbyRef, {
+    players: [
+      ...lobby.players,
+      {
+        id: Date.now().toString(),
+        name: playerName,
+        monster,
+        trap,
+        shots: 0,
+      },
+    ],
+  });
+};
 
 export default function Game() {
   const { lobbyId, playerName } = useLocalSearchParams();
@@ -45,7 +64,7 @@ export default function Game() {
   const handleDraw = async () => {
     if (!lobby) return;
     try {
-      const newMagic = randomMagic();
+      const newMagic = await randomMagic(); // 👈 jetzt async!
       console.log("[DRAW] Neue Karte:", newMagic);
 
       await updateDoc(lobbyRef, {
@@ -54,7 +73,7 @@ export default function Game() {
       });
 
       // Karte sofort im Modal für mich anzeigen
-      setSelectedCard({ ...newMagic, type: "magic" });
+      setSelectedCard({ ...newMagic, type: "MAGIC" });
     } catch (err) {
       console.error("[DRAW ERROR]", err);
     }
