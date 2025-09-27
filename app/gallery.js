@@ -1,5 +1,4 @@
 import { useRouter } from "expo-router";
-import Papa from "papaparse";
 import { useState } from "react";
 import {
   Image,
@@ -10,43 +9,7 @@ import {
   View,
 } from "react-native";
 import Card from "../src/components/Card";
-
-// 🔹 ID deines Default-Bildes in Google Drive
-const DEFAULT_ID = "1Ewq8yJqYITcRE1jS7GIssy7_9EYi6zxY";
-
-// Hilfsfunktion: Drive-ID in Direktlink umwandeln
-function makeDriveUrl(fileId, cardName = "Unbekannt") {
-  if (!fileId || fileId.trim() === "") {
-    const url = `https://drive.google.com/uc?export=download&id=${DEFAULT_ID}`;
-    console.log(`🖼️ [${cardName}] -> Default Bild genutzt: ${url}`);
-    return url;
-  }
-
-  const url = `https://drive.google.com/uc?export=download&id=${fileId.trim()}`;
-  console.log(`🖼️ [${cardName}] -> Drive Bild genutzt: ${url}`);
-  return url;
-}
-
-// CSV-Parser
-async function fetchCSV(url) {
-  const res = await fetch(url);
-  const text = await res.text();
-  console.log("📥 CSV-Rohdaten:\n", text);
-
-  const { data } = Papa.parse(text, { header: true });
-  console.log("📊 Geparste Daten:", data);
-
-  return data
-    .filter((row) => row.name)
-    .map((row) => {
-      const imageUrl = makeDriveUrl(row.driveId, row.name);
-      return {
-        name: row.name.trim(),
-        effect: row.effect?.trim(),
-        image: { uri: imageUrl },
-      };
-    });
-}
+import { fetchAllCards } from "../src/utils/cards"; // <- hierher ausgelagert
 
 export default function Gallery() {
   const router = useRouter();
@@ -54,18 +17,8 @@ export default function Gallery() {
   const [allCards, setAllCards] = useState([]);
 
   async function refreshCards() {
-    // ⚠️ Bitte die richtigen CSV-Export-Links mit "export?format=csv&gid=" einsetzen
-    const monster = await fetchCSV(
-      "https://docs.google.com/spreadsheets/d/1J8gaa-SfBALyJfnMOvBXKFuNe49AtfhfQFsNKqV_fjU/export?format=csv&gid=451899318"
-    );
-    const traps = await fetchCSV(
-      "https://docs.google.com/spreadsheets/d/1J8gaa-SfBALyJfnMOvBXKFuNe49AtfhfQFsNKqV_fjU/export?format=csv&gid=1542620199"
-    );
-    const magics = await fetchCSV(
-      "https://docs.google.com/spreadsheets/d/1J8gaa-SfBALyJfnMOvBXKFuNe49AtfhfQFsNKqV_fjU/export?format=csv&gid=1110294285"
-    );
-
-    setAllCards([...monster, ...traps, ...magics]);
+    const cards = await fetchAllCards();
+    setAllCards(cards);
   }
 
   return (
@@ -114,6 +67,13 @@ export default function Gallery() {
             <Image
               source={card.image}
               style={{ width: 80, height: 120, resizeMode: "cover" }}
+              onError={(e) =>
+                console.warn(
+                  "❌ Bild konnte nicht geladen werden:",
+                  card.image,
+                  e.nativeEvent.error
+                )
+              }
             />
           </TouchableOpacity>
         ))}
