@@ -1,28 +1,30 @@
 import { Image, StyleSheet, Text, View } from "react-native";
 
 export default function Card({ title, effect, image, type = "monster" }) {
+  const normalizedType = type?.toLowerCase?.() || "monster";
+
   const typeColors = {
     monster: "#C9A66B",
     magic: "#3A9D8E",
     trap: "#8B3A62",
   };
 
-  const cardColor = typeColors[type] || "#C9A66B";
+  const cardColor = typeColors[normalizedType] || "#C9A66B";
 
   return (
     <View style={[styles.card, { borderColor: cardColor }]}>
       {/* Typ-Leiste oben */}
       <View style={[styles.typeRow, { backgroundColor: cardColor }]}>
         <Text style={styles.typeLabel}>
-          {type === "magic"
+          {normalizedType === "magic"
             ? "[MAGIEKARTE]"
-            : type === "trap"
+            : normalizedType === "trap"
             ? "[FALLENKARTE]"
             : "[MONSTER]"}
         </Text>
       </View>
 
-      {/* Titel darunter, eigene Zeile */}
+      {/* Titel */}
       <View style={styles.titleRow}>
         <Text style={styles.title}>{title}</Text>
       </View>
@@ -37,7 +39,7 @@ export default function Card({ title, effect, image, type = "monster" }) {
         />
       </View>
 
-      {/* Effekt-Text */}
+      {/* Effekt */}
       <View style={styles.effectBox}>
         <Text style={styles.effectText}>{effect}</Text>
       </View>

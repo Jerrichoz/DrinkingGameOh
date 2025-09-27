@@ -64,9 +64,25 @@ export async function fetchAllCards() {
     buildCsvUrl(process.env.EXPO_PUBLIC_GOOGLE_GID_MAGIC)
   );
 
-  return [
-    ...monster.map((c) => ({ ...c, type: "MONSTER" })),
-    ...traps.map((c) => ({ ...c, type: "TRAP" })),
-    ...magics.map((c) => ({ ...c, type: "MAGIC" })),
-  ];
+  const monsterCards = monster.map((c) => ({ ...c, type: "MONSTER" }));
+  const trapCards = traps.map((c) => ({ ...c, type: "TRAP" }));
+  const magicCards = magics.map((c) => ({ ...c, type: "MAGIC" }));
+
+  const allCards = [...monsterCards, ...trapCards, ...magicCards];
+
+  // 🐛 Debug-Logging
+  console.log("=== Karten geladen ===");
+  allCards.forEach((card, i) => {
+    console.log(
+      `#${i + 1}:`,
+      card.name,
+      "| Typ:",
+      card.type,
+      "| Effekt:",
+      card.effect
+    );
+  });
+  console.log("======================");
+
+  return allCards;
 }
