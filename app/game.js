@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { db } from "../firebaseConfig";
 import MagicCardModal from "../src/components/MagicCardModal";
+import VotePanel from "../src/components/VotePanel";
 import { gameStyles } from "../src/styles/gameStyles";
 import { randomMagic, randomMonster, randomTrap } from "../src/utils/gameLogic";
 
@@ -178,9 +179,11 @@ export default function Game() {
 
         if (jaCount > neinCount) {
           console.log("[VOTE RESULT] Mehrheit Ja → Effekt gültig");
+          updates.voteResult = "✅ Effekt wurde bestätigt!";
         } else if (neinCount > jaCount) {
           console.log("[VOTE RESULT] Mehrheit Nein → Spieler muss trinken");
-          // auslösender Spieler muss trinken
+          updates.voteResult = `❌ Effekt abgelehnt! ${lobby.activeEffect.player} muss trinken 🍻`;
+
           const updatedPlayers = lobby.players.map((p) =>
             p.name === lobby.activeEffect.player
               ? { ...p, shots: (p.shots || 0) + 1 }
@@ -189,6 +192,7 @@ export default function Game() {
           updates.players = updatedPlayers;
         } else {
           console.log("[VOTE RESULT] Gleichstand → nix passiert");
+          updates.voteResult = "⚖️ Gleichstand – nix passiert.";
         }
 
         updates.activeEffect = null;
@@ -411,6 +415,12 @@ export default function Game() {
         handleDiscard={handleDiscard}
         handleDrink={handleDrink}
         handleActivateEffect={handleActivateEffect}
+        handleVote={handleVote}
+      />
+      <VotePanel
+        lobby={lobby}
+        playerName={playerName}
+        handleVote={handleVote}
       />
     </LinearGradient>
   );

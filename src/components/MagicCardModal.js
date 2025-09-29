@@ -10,6 +10,7 @@ export default function MagicCardModal({
   handleDiscard,
   handleDrink,
   handleActivateEffect,
+  handleVote,
 }) {
   const card = selectedCard || lobby.lastMagic;
 
@@ -68,7 +69,7 @@ export default function MagicCardModal({
           <>
             {/* Saufen (alle) */}
             <TouchableOpacity
-              onPress={() => handleDrink(playerName)} // aktueller Spieler trinkt selbst
+              onPress={() => handleDrink(me.name)}
               style={{
                 marginTop: 10,
                 backgroundColor: "#D9C9A3",
@@ -137,6 +138,8 @@ export default function MagicCardModal({
             )}
           </>
         )}
+
+        {/* Abstimmungs-Overlay */}
         {lobby.activeEffect && lobby.votingOpen && (
           <View
             style={{
@@ -188,6 +191,39 @@ export default function MagicCardModal({
                 <Text style={{ color: "#fff" }}>Nein ❌</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        )}
+
+        {/* Ergebnis-Overlay nach Abstimmung */}
+        {!lobby.votingOpen && lobby.voteResult && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.85)",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 20,
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 20, textAlign: "center" }}>
+              {lobby.voteResult}
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => setSelectedCard(null)}
+              style={{
+                marginTop: 20,
+                backgroundColor: "#D9C9A3",
+                padding: 10,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: "#000" }}>OK</Text>
+            </TouchableOpacity>
           </View>
         )}
 
