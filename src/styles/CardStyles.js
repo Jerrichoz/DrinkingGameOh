@@ -4,69 +4,85 @@ export const cardStyles = StyleSheet.create({
   cardTemplate: {
     width: 320,
     height: 550,
-    borderWidth: 8,
-    borderRadius: 10,
-    backgroundColor: "#c9c3af",
-    overflow: "hidden",
     margin: 10,
+    zIndex: 1,
   },
 
-  cardFace: {
-    ...StyleSheet.absoluteFillObject,
-    borderWidth: 8,
-    borderRadius: 10,
-  },
-
+  // Titel im oberen Balken
   cardTitle: {
-    fontSize: 20,
+    position: "absolute",
+    top: 27,
+    left: 20,
+    right: 40, // Platz für Sterne rechts lassen
+    fontSize: 16,
     fontWeight: "bold",
-    color: "#d9c25f", // gold
-    textAlign: "center",
-    marginVertical: 6,
+    color: "#000",
+    textAlign: "left",
+    numberOfLines: 1, // verhindert Zeilenumbruch
   },
 
-  // Sterne
+  // Sterne rechts vom Titel
   starLevel: {
     position: "absolute",
-    width: 22,
-    top: 50,
+    top: 65,
+    right: 30,
+    width: 25,
+    height: 25,
+    zIndex: 3,
   },
 
-  typeLabel: {
-    textAlign: "center",
-    fontSize: 13,
-    fontWeight: "bold",
-    marginVertical: 4,
-  },
-
+  // Bild exakt im schwarzen Fenster
   imageBox: {
-    width: 280,
-    height: 250,
-    marginHorizontal: 20,
-    borderWidth: 2,
-    borderColor: "#333",
-    backgroundColor: "#000",
+    position: "absolute",
+    top: 95,
+    left: 34,
+    right: 34,
+    width: 250,
+    height: 295,
+    zIndex: 99,
   },
 
+  // Typ-Leiste (unter Bild, vor Effekt)
+  typeLabel: {
+    position: "absolute",
+    top: 410,
+    left: 25,
+    right: 20,
+    fontSize: 14,
+    fontWeight: "bold",
+    textAlign: "left",
+  },
+
+  // Beschreibung unten im Textfeld
   monsterDescription: {
-    fontSize: 13,
-    margin: 10,
-    backgroundColor: "#b2dfdb",
-    borderWidth: 2,
-    borderColor: "#e67e22",
-    padding: 6,
+    position: "absolute",
+    top: 430,
+    left: 28,
+    right: 20,
+    bottom: 40, // Platz für ATK/DEF lassen
+    fontSize: 12,
+    lineHeight: 16,
+    color: "#000",
+    textAlign: "left",
+    backgroundColor: "transparent",
+    zIndex: 3,
   },
 
+  // ATK/DEF ganz unten rechts
   monsterAtk: {
     position: "absolute",
-    right: 70,
-    bottom: 15,
+    bottom: 13,
+    right: 80,
+    fontSize: 12,
     fontWeight: "bold",
+    color: "#000",
   },
   monsterDef: {
     position: "absolute",
+    bottom: 13,
     right: 20,
-    bottom: 15,
+    fontSize: 12,
     fontWeight: "bold",
+    color: "#000",
   },
 });

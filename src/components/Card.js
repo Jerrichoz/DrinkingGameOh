@@ -1,4 +1,4 @@
-import { Image, Text, View } from "react-native";
+import { Image, ImageBackground, Text } from "react-native";
 import { cardStyles } from "../styles/CardStyles";
 
 export default function Card({
@@ -9,61 +9,78 @@ export default function Card({
   type = "magic", // "magic" | "trap" | "monster"
   stars = 4,
   monsterType = "[Hexer / Effekt]",
-  imageUri = "https://jerrichoz.github.io/DrinkingGameOh/assets/images/cards/cocktail.png",
+  image = {
+    uri: "https://jerrichoz.github.io/DrinkingGameOh/assets/images/cards/default_card.png",
+  },
 }) {
-  const typeStyles = {
-    magic: {
-      frame: "#00796B",
-      label: "[ZAUBERKARTE]",
-    },
-    trap: {
-      frame: "#8B3A62",
-      label: "[FALLENKARTE]",
-    },
-    monster: {
-      frame: "#C9A66B",
-      label: monsterType,
-    },
-  };
+  // --- robustes Normalisieren: niemals crashen ---
+  const normalizedType =
+    typeof type === "string" && type.trim().length > 0
+      ? type.trim().toLowerCase()
+      : "monster";
 
-  const current = typeStyles[type];
+  // --- Frames pro Typ (Achtung: Pfade relativ zu src/components/Card.js) ---
+  const frameSources = {
+    monster: require("../../assets/images/templates/monster_frame.png"),
+    magic: require("../../assets/images/templates/magic_frame.png"),
+    trap: require("../../assets/images/templates/trap_frame.png"),
+  };
+  const currentFrame = frameSources[normalizedType] || frameSources.monster;
+
+  // --- Label pro Typ ---
+  const typeLabels = {
+    magic: "[ZAUBERKARTE]",
+    trap: "[FALLENKARTE]",
+    monster: monsterType,
+  };
+  const currentLabel =
+    typeLabels[normalizedType] || `[${normalizedType.toUpperCase()}]`;
+
+  // --- Debug-Ausgabe ---
+  console.log("📦 Card Props:", {
+    title,
+    type,
+    image,
+  });
 
   return (
-    <View style={[cardStyles.cardTemplate, { borderColor: current.frame }]}>
-      {/* Kartenrahmen */}
-      <View style={[cardStyles.cardFace, { borderColor: current.frame }]} />
-
+    <ImageBackground
+      source={currentFrame}
+      style={cardStyles.cardTemplate}
+      resizeMode="stretch"
+    >
       {/* Titel */}
-      <Text style={cardStyles.cardTitle}>{title}</Text>
+      <Text style={cardStyles.cardTitle} numberOfLines={1}>
+        {title}
+      </Text>
 
       {/* Sterne (nur für Monsterkarten) */}
-      {type === "monster" &&
+      {normalizedType === "monster" &&
         [...Array(stars)].map((_, i) => (
           <Image
             key={i}
-            source={{
-              uri: "https://jerrichoz.github.io/DrinkingGameOh/assets/images/star.png",
-            }}
-            style={[cardStyles.starLevel, { left: 340 - i * 25 }]}
+            source={require("../../assets/images/star.png")}
+            style={[cardStyles.starLevel, { right: 30 + i * 25 }]}
+            resizeMode="contain"
           />
         ))}
 
-      {/* Typ-Leiste */}
-      <Text style={cardStyles.typeLabel}>{current.label}</Text>
+      {/* Bild in der Mitte */}
+      <Image source={image} style={cardStyles.imageBox} resizeMode="cover" />
 
-      {/* Bild */}
-      <Image source={{ uri: imageUri }} style={cardStyles.imageBox} />
+      {/* Typ-Leiste */}
+      <Text style={cardStyles.typeLabel}>{currentLabel}</Text>
 
       {/* Beschreibung */}
       <Text style={cardStyles.monsterDescription}>{description}</Text>
 
       {/* ATK/DEF (nur bei Monsterkarten) */}
-      {type === "monster" && (
+      {normalizedType === "monster" && (
         <>
           <Text style={cardStyles.monsterAtk}>ATK/{atk}</Text>
           <Text style={cardStyles.monsterDef}>DEF/{def}</Text>
         </>
       )}
-    </View>
+    </ImageBackground>
   );
 }

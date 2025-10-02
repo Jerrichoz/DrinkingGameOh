@@ -71,7 +71,8 @@ export default function Gallery() {
           >
             <Image
               source={card.image}
-              style={{ width: 80, height: 120, resizeMode: "cover" }}
+              style={{ width: 80, height: 120 }}
+              resizeMode="cover"
               onError={(e) =>
                 console.warn(
                   "❌ Bild konnte nicht geladen werden:",
@@ -96,7 +97,7 @@ export default function Gallery() {
         >
           <Card
             title={selectedCard?.name}
-            effect={selectedCard?.effect}
+            description={selectedCard?.effect}
             image={selectedCard?.image}
             type={selectedCard?.type}
           />

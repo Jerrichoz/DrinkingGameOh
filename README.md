@@ -31,3 +31,7 @@ Mit Yu-Gi-Oh!-Kartenoptik, Multiplayer-Lobby und Magie-/Fallen-/Monsterkarten.
 git clone https://github.com/dein-repo-name.git
 cd dein-projekt
 ```
+
+### Links
+
+https://codepen.io/camelCaseJoe/pen/eYZPvvM
