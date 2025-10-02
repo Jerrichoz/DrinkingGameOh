@@ -2,9 +2,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams } from "expo-router";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, Modal, Text, TouchableOpacity, View } from "react-native";
 import { db } from "../firebaseConfig";
-import MagicCardModal from "../src/components/MagicCardModal";
+import Card from "../src/components/Card";
 import VotePanel from "../src/components/VotePanel";
 import { gameStyles } from "../src/styles/gameStyles";
 import { randomMagic, randomMonster, randomTrap } from "../src/utils/gameLogic";
@@ -240,10 +240,10 @@ export default function Game() {
         🎴 Spiel läuft – Lobby {lobbyId}
       </Text>
 
-      {/* --- Gegnerkarten (oben) --- */}
+      {/* Gegnerkarten (oben) */}
       <View
         style={{
-          flexDirection: "row", // nebeneinander
+          flexDirection: "row",
           justifyContent: "center",
           marginBottom: 40,
         }}
@@ -253,31 +253,38 @@ export default function Game() {
             key={p.id}
             style={{ alignItems: "center", marginHorizontal: 10 }}
           >
-            {/* Monsterkarte (immer offen & anklickbar für Vergrößerung) */}
-            {p.monster && (
-              <TouchableOpacity
-                onPress={() =>
-                  setSelectedCard({ ...p.monster, type: "monster" })
-                }
-              >
+            {/* Monster + Falle nebeneinander */}
+            <View style={{ flexDirection: "row" }}>
+              {/* Monsterkarte → offen & klickbar */}
+              {p.monster ? (
+                <TouchableOpacity
+                  onPress={() =>
+                    setSelectedCard({ ...p.monster, type: "monster" })
+                  }
+                >
+                  <Image
+                    source={p.monster.image}
+                    style={{ width: 60, height: 90, marginHorizontal: 5 }}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ) : (
+                <View style={{ width: 60, height: 90, marginHorizontal: 5 }} />
+              )}
+
+              {/* Fallenkarte → Gegner sieht nur Rückseite, NICHT klickbar */}
+              {p.trap ? (
                 <Image
-                  source={p.monster.image}
+                  source={require("../assets/images/card_back.png")}
                   style={{ width: 60, height: 90, marginHorizontal: 5 }}
                   resizeMode="cover"
                 />
-              </TouchableOpacity>
-            )}
+              ) : (
+                <View style={{ width: 60, height: 90, marginHorizontal: 5 }} />
+              )}
+            </View>
 
-            {/* Fallenkarte (immer verdeckt, nicht anklickbar für Gegner) */}
-            {p.trap && (
-              <Image
-                source={require("../assets/images/card_back.png")}
-                style={{ width: 60, height: 90, marginHorizontal: 5 }}
-                resizeMode="cover"
-              />
-            )}
-
-            {/* Spielername */}
+            {/* Spielername darunter */}
             <Text style={{ color: "#fff", marginTop: 5 }}>{p.name}</Text>
           </View>
         ))}
@@ -311,26 +318,23 @@ export default function Game() {
         {/* Wenn es eine gezogene Karte gibt */}
         {lobby.lastMagic && (
           <View style={{ alignItems: "center", marginTop: 10 }}>
-            {/* Karte sichtbar machen */}
             {lobby.showMagic ? (
               <>
-                {/* Sobald Karte aufgedeckt ist → allen groß zeigen */}
                 <TouchableOpacity
                   onPress={() =>
                     setSelectedCard({ ...lobby.lastMagic, type: "magic" })
                   }
                 >
-                  <Image
-                    source={lobby.lastMagic.image}
-                    style={{ width: 120, height: 180 }}
-                    resizeMode="cover"
+                  <Card
+                    title={lobby.lastMagic.title}
+                    description={lobby.lastMagic.effect}
+                    type="magic"
+                    image={lobby.lastMagic.image}
                   />
                 </TouchableOpacity>
                 <Text style={{ color: "#fff", marginTop: 5 }}>
-                  {lobby.lastMagic.name}
+                  {lobby.lastMagic.title}
                 </Text>
-
-                {/* Nur der aktuelle Spieler darf ablegen */}
                 {isMyTurn && (
                   <TouchableOpacity
                     onPress={handleDiscard}
@@ -346,7 +350,6 @@ export default function Game() {
                 )}
               </>
             ) : (
-              // Karte noch verdeckt → nur der aktuelle Spieler darf sie aufdecken
               isMyTurn && (
                 <TouchableOpacity
                   onPress={handleShow}
@@ -364,6 +367,42 @@ export default function Game() {
           </View>
         )}
       </View>
+      {/* Modal für vergrößerte Karten */}
+      {selectedCard && (
+        <Modal visible={!!selectedCard} transparent animationType="fade">
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.8)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Card
+              title={selectedCard.name}
+              description={selectedCard.effect}
+              atk={selectedCard.atk}
+              def={selectedCard.def}
+              type={selectedCard.type}
+              stars={selectedCard.stars}
+              monsterType={selectedCard.monsterType}
+              image={selectedCard.image}
+            />
+
+            <TouchableOpacity
+              onPress={() => setSelectedCard(null)}
+              style={{
+                marginTop: 20,
+                padding: 10,
+                backgroundColor: "#D9C9A3",
+                borderRadius: 8,
+              }}
+            >
+              <Text>Schließen</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
 
       {/* --- Eigene Karten (unten) --- */}
       <View
@@ -373,7 +412,7 @@ export default function Game() {
           marginTop: "auto",
         }}
       >
-        {/* Mein Monster (immer offen & anklickbar für Details) */}
+        {/* Mein Monster (nur Bild anzeigen, komplette Karte erst im Modal) */}
         {me?.monster && (
           <TouchableOpacity
             onPress={() => setSelectedCard({ ...me.monster, type: "monster" })}
@@ -386,7 +425,7 @@ export default function Game() {
           </TouchableOpacity>
         )}
 
-        {/* Meine Falle (verdeckt, nur ich kann sie anklicken & lesen) */}
+        {/* Meine Falle (verdeckt, aber beim Klick wird vollständige Karte angezeigt) */}
         {me?.trap && (
           <TouchableOpacity
             onPress={() => setSelectedCard({ ...me.trap, type: "trap" })}
@@ -405,18 +444,7 @@ export default function Game() {
       </Text>
 
       {/* --- Modal für vergrößerte Karten (Monster, Falle, Magic) --- */}
-      <MagicCardModal
-        lobby={lobby}
-        me={me}
-        isMyTurn={isMyTurn}
-        selectedCard={selectedCard}
-        setSelectedCard={setSelectedCard}
-        handleShow={handleShow}
-        handleDiscard={handleDiscard}
-        handleDrink={handleDrink}
-        handleActivateEffect={handleActivateEffect}
-        handleVote={handleVote}
-      />
+
       <VotePanel
         lobby={lobby}
         playerName={playerName}

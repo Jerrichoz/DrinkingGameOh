@@ -9,16 +9,19 @@ export const cardStyles = StyleSheet.create({
   },
 
   // Titel im oberen Balken
-  cardTitle: {
+  titleWrap: {
     position: "absolute",
     top: 27,
     left: 20,
-    right: 40, // Platz für Sterne rechts lassen
-    fontSize: 16,
+    right: 20,
+    height: 24,
+    justifyContent: "center",
+  },
+  cardTitle: {
+    fontSize: 20,
     fontWeight: "bold",
+    fontFamily: "Didact Gothic",
     color: "#000",
-    textAlign: "left",
-    numberOfLines: 1, // verhindert Zeilenumbruch
   },
 
   // Sterne rechts vom Titel
@@ -42,21 +45,31 @@ export const cardStyles = StyleSheet.create({
     zIndex: 99,
   },
 
-  // Typ-Leiste (unter Bild, vor Effekt)
+  // Typ-Leiste (unter Bild, vor Effekt) ausgeblendet
   typeLabel: {
     position: "absolute",
     top: 410,
     left: 25,
     right: 20,
-    fontSize: 14,
+    fontSize: 0,
     fontWeight: "bold",
     textAlign: "left",
   },
 
+  // neues Label für Magic/Trap oben
+  topTypeLabel: {
+    position: "absolute",
+    top: 70, // gleiche Höhe wie Titel
+    right: 32,
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#000",
+    textAlign: "right",
+  },
   // Beschreibung unten im Textfeld
   monsterDescription: {
     position: "absolute",
-    top: 430,
+    top: 415,
     left: 28,
     right: 20,
     bottom: 40, // Platz für ATK/DEF lassen

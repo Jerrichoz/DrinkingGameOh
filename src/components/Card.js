@@ -1,14 +1,15 @@
-import { Image, ImageBackground, Text } from "react-native";
+import { Image, ImageBackground, Text, View } from "react-native";
+import AutoFontSizeText from "../components/AutoFontSizeText";
 import { cardStyles } from "../styles/CardStyles";
 
 export default function Card({
   title = "Mystischer-Raum-Cocktail",
   description = "Wähle drei Getränke deiner Wahl und mixe sie zu einem Cocktail. Wähle zwei Mitspieler, die den Cocktail innerhalb von drei Runden auftrinken müssen.",
   atk = 1500,
-  def = 1200,
+  def = 1500,
   type = "magic", // "magic" | "trap" | "monster"
   stars = 4,
-  monsterType = "[Hexer / Effekt]",
+  monsterType = "[Effekt]",
   image = {
     uri: "https://jerrichoz.github.io/DrinkingGameOh/assets/images/cards/default_card.png",
   },
@@ -50,11 +51,17 @@ export default function Card({
       resizeMode="stretch"
     >
       {/* Titel */}
-      <Text style={cardStyles.cardTitle} numberOfLines={1}>
-        {title}
-      </Text>
+      <View style={cardStyles.titleWrap}>
+        <AutoFontSizeText
+          style={cardStyles.cardTitle}
+          minFontSize={14}
+          maxFontSize={20}
+        >
+          {title}
+        </AutoFontSizeText>
+      </View>
 
-      {/* Sterne (nur für Monsterkarten) */}
+      {/* Monster: Sterne */}
       {normalizedType === "monster" &&
         [...Array(stars)].map((_, i) => (
           <Image
@@ -64,12 +71,17 @@ export default function Card({
             resizeMode="contain"
           />
         ))}
-
+      {/* Magic / Trap: TypeLabel oben statt Sterne */}
+      {(normalizedType === "magic" || normalizedType === "trap") && (
+        <Text style={cardStyles.topTypeLabel}>{currentLabel}</Text>
+      )}
       {/* Bild in der Mitte */}
       <Image source={image} style={cardStyles.imageBox} resizeMode="cover" />
 
-      {/* Typ-Leiste */}
-      <Text style={cardStyles.typeLabel}>{currentLabel}</Text>
+      {/* Monster: TypeLabel wie bisher unten über der Beschreibung */}
+      {normalizedType === "monster" && (
+        <Text style={cardStyles.typeLabel}>{currentLabel}</Text>
+      )}
 
       {/* Beschreibung */}
       <Text style={cardStyles.monsterDescription}>{description}</Text>
